@@ -1,60 +1,61 @@
 package minesweeper
 
-import java.util.*
+import java.util.Random
+import java.util.Scanner
 
 /**
  * Консольная игра "Сапер" на поле 9x9.
  */
 object Minesweeper {
     /** Сканер для чтения команд пользователя. */
-    private val SCANNER = Scanner(System.`in`)
+    private val scanner = Scanner(System.`in`)
     /** Игровое поле: 0-8 обозначают количество мин рядом, 11 обозначает мину. */
-    private var LINES = Array(9) { Array(9) { 0 } }
+    private var minefield = Array(9) { Array(9) { 0 } }
     /** Видимое состояние клеток: 0 - скрыта, 1 - открыта, 2 - отмечена. */
-    private var VIEW = Array(9) { Array(9) { 0 } }
+    private var visibleCells = Array(9) { Array(9) { 0 } }
     /** Количество еще не найденных настоящих мин. */
-    private var BOMBS = 0
+    private var remainingMines = 0
     /** Количество ошибочно отмеченных мин. */
-    private var FAKE_BOMBS = 0
+    private var wrongMineMarks = 0
     /** Количество безопасных клеток, которые еще не открыты пользователем. */
-    private var FREE_LEFT = 81
+    private var hiddenSafeCells = 81
     /** Флаг, показывающий, были ли уже размещены мины. */
-    private var SET_BOMBS = false
+    private var minesPlaced = false
     /** Флаг первого прохода при проверке соседних клеток. */
-    private var FIRST = true
+    private var isFirstNeighborPass = true
     /** Флаг поражения пользователя. */
-    private var LOST = false
+    private var isLost = false
 
     /**
      * Запускает игру, выполняет инициализацию и основной игровой цикл.
      */
     fun run() {
         initialize()
-        while ((FAKE_BOMBS > 0 || BOMBS > 0) && !LOST && FREE_LEFT != 0) {
+        while ((wrongMineMarks > 0 || remainingMines > 0) && !isLost && hiddenSafeCells != 0) {
             printField()
             fieldAction()
         }
         printField()
-        println(if (LOST) "You stepped on a mine and failed!" else "Congratulations! You found all the mines!")
+        println(if (isLost) "You stepped on a mine and failed!" else "Congratulations! You found all the mines!")
     }
 
     /**
      * Читает количество мин, готовит поле и размещает мины после первого безопасного хода.
      */
     private fun initialize() {
-        BOMBS = getNum("How many mines do you want on the field? ", false)
-        if (notRange(BOMBS, 1..71)) BOMBS = getRange(BOMBS, 1..71)
-        FREE_LEFT -= BOMBS
+        remainingMines = getNum("How many mines do you want on the field? ", false)
+        if (isOutOfRange(remainingMines, 1..71)) remainingMines = getRange(remainingMines, 1..71)
+        hiddenSafeCells -= remainingMines
 
-        while (!SET_BOMBS) {
+        while (!minesPlaced) {
             printField()
             fieldAction()
         }
-        for (num1 in LINES.indices) { // in case user marked bombs before freeing a field
-            for (num2 in LINES.indices) {
-                if (VIEW[num1][num2] == 2 && LINES[num1][num2] == 11) {
-                    FAKE_BOMBS -= 1
-                    BOMBS -= 1
+        for (rowIndex in minefield.indices) { // in case user marked bombs before freeing a field
+            for (columnIndex in minefield.indices) {
+                if (visibleCells[rowIndex][columnIndex] == 2 && minefield[rowIndex][columnIndex] == 11) {
+                    wrongMineMarks -= 1
+                    remainingMines -= 1
                 }
             }
         }
@@ -67,15 +68,15 @@ object Minesweeper {
         val strLine = "-|---------|"
         println("\n |123456789|")
         println(strLine)
-        for (num in LINES.indices) {
-            print("${num + 1}|")
-            for (num2 in LINES[num].indices) {
+        for (rowIndex in minefield.indices) {
+            print("${rowIndex + 1}|")
+            for (columnIndex in minefield[rowIndex].indices) {
                 print(
                     when {
-                        LINES[num][num2] == 11 && LOST -> "X"
-                        VIEW[num][num2] == 2 && !LOST -> "*"
-                        VIEW[num][num2] == 1 -> {
-                            if (LINES[num][num2] == 0) "/" else LINES[num][num2]
+                        minefield[rowIndex][columnIndex] == 11 && isLost -> "X"
+                        visibleCells[rowIndex][columnIndex] == 2 && !isLost -> "*"
+                        visibleCells[rowIndex][columnIndex] == 1 -> {
+                            if (minefield[rowIndex][columnIndex] == 0) "/" else minefield[rowIndex][columnIndex]
                         }
                         else -> "."
                     }
@@ -93,19 +94,19 @@ object Minesweeper {
         var marked = false
         while (!marked) {
             print("Set/unset mine marks or claim a cell as free: ")
-            val str1 = SCANNER.next().trim()
-            val str2 = SCANNER.next().trim()
-            val str3 = SCANNER.next().trim().lowercase()
-            var num2 = if (isNumber(str1)) str1.toInt() else getNum(str1)
-            var num1 = if (isNumber(str2)) str2.toInt() else getNum(str2)
-            if (notRange(num1, 1..9)) num1 = getRange(num1, 1..9)
-            if (notRange(num2, 1..9)) num2 = getRange(num2, 1..9)
-            num1 -= 1
-            num2 -= 1
+            val columnText = scanner.next().trim()
+            val rowText = scanner.next().trim()
+            val action = scanner.next().trim().lowercase()
+            var columnNumber = if (isNumber(columnText)) columnText.toInt() else getNum(columnText)
+            var rowNumber = if (isNumber(rowText)) rowText.toInt() else getNum(rowText)
+            if (isOutOfRange(rowNumber, 1..9)) rowNumber = getRange(rowNumber, 1..9)
+            if (isOutOfRange(columnNumber, 1..9)) columnNumber = getRange(columnNumber, 1..9)
+            val rowIndex = rowNumber - 1
+            val columnIndex = columnNumber - 1
 
-            when (str3) {
-                "free" -> marked = free(num1, num2)
-                "mine" -> marked = markMine(num1, num2)
+            when (action) {
+                "free" -> marked = free(rowIndex, columnIndex)
+                "mine" -> marked = markMine(rowIndex, columnIndex)
             }
         }
     }
@@ -113,90 +114,146 @@ object Minesweeper {
     /**
      * Открывает клетку и при необходимости раскрывает соседние пустые области.
      *
-     * @param num1 индекс строки.
-     * @param num2 индекс столбца.
+     * @param rowIndex индекс строки.
+     * @param columnIndex индекс столбца.
      * @return true, если действие успешно обработано.
      */
-    private fun free(num1: Int, num2: Int): Boolean {
-        if (!SET_BOMBS) { // sets up the view that bombsSet() needs to work
-            if (VIEW[num1][num2] == 2) FAKE_BOMBS -= 1
-            VIEW[num1][num2] = 1
-            surroundCheck(num1, num2)
-            FIRST = false
-            bombsSet()
-            for (numA in VIEW.indices) { // resets the view, so that open fields can be shown
-                for (numB in VIEW[numA].indices) {
-                    if (VIEW[numA][numB] == 1) VIEW[numA][numB] = 0
-                }
-            }
-            VIEW[num1][num2] = 1
-            SET_BOMBS = true
-            FREE_LEFT -= 1
-            surroundCheck(num1, num2)
+    private fun free(rowIndex: Int, columnIndex: Int): Boolean {
+        if (!minesPlaced) {
+            return openFirstCell(rowIndex, columnIndex)
+        }
+        if (minefield[rowIndex][columnIndex] == 11) {
+            isLost = true
             return true
-        } else { // frees a field if it is not a bomb or already free
-            if (LINES[num1][num2] == 11) {
-                LOST = true
-                return true
-            } else {
-                when (VIEW[num1][num2]) {
-                    0 -> {
-                        VIEW[num1][num2] = 1
-                        FREE_LEFT -= 1
-                        if (LINES[num1][num2] == 0) surroundCheck(num1, num2)
-                        return true
-                    }
-                    1 -> {
-                        println("field is already free")
-                        return false
-                    }
-                    2 -> {
-                        VIEW[num1][num2] = 1
-                        FREE_LEFT -= 1
-                        if (LINES[num1][num2] == 0) surroundCheck(num1, num2)
-                        FAKE_BOMBS -= 1
-                        return true
-                    }
-                }
+        }
+        return openSafeCell(rowIndex, columnIndex)
+    }
+
+    /**
+     * Обрабатывает первый ход: гарантирует безопасную клетку и только потом размещает мины.
+     *
+     * @param rowIndex индекс строки.
+     * @param columnIndex индекс столбца.
+     * @return true после успешной обработки первого хода.
+     */
+    private fun openFirstCell(rowIndex: Int, columnIndex: Int): Boolean {
+        if (visibleCells[rowIndex][columnIndex] == 2) wrongMineMarks -= 1
+        visibleCells[rowIndex][columnIndex] = 1
+        checkNeighbors(rowIndex, columnIndex)
+        isFirstNeighborPass = false
+        placeMines()
+        clearVisibleCells()
+        visibleCells[rowIndex][columnIndex] = 1
+        minesPlaced = true
+        hiddenSafeCells -= 1
+        checkNeighbors(rowIndex, columnIndex)
+        return true
+    }
+
+    /**
+     * Сбрасывает временно открытые клетки, которые использовались при безопасном размещении мин.
+     */
+    private fun clearVisibleCells() {
+        for (rowIndex in visibleCells.indices) {
+            for (columnIndex in visibleCells[rowIndex].indices) {
+                if (visibleCells[rowIndex][columnIndex] == 1) visibleCells[rowIndex][columnIndex] = 0
             }
         }
-        return false
+    }
+
+    /**
+     * Открывает безопасную клетку после размещения мин.
+     *
+     * @param rowIndex индекс строки.
+     * @param columnIndex индекс столбца.
+     * @return true, если клетка была открыта, false для уже открытой клетки.
+     */
+    private fun openSafeCell(rowIndex: Int, columnIndex: Int): Boolean {
+        return when (visibleCells[rowIndex][columnIndex]) {
+            0 -> {
+                revealCell(rowIndex, columnIndex)
+                true
+            }
+            1 -> {
+                println("field is already free")
+                false
+            }
+            2 -> {
+                revealCell(rowIndex, columnIndex)
+                wrongMineMarks -= 1
+                true
+            }
+            else -> false
+        }
+    }
+
+    /**
+     * Открывает клетку и раскрывает соседей, если клетка пустая.
+     *
+     * @param rowIndex индекс строки.
+     * @param columnIndex индекс столбца.
+     */
+    private fun revealCell(rowIndex: Int, columnIndex: Int) {
+        visibleCells[rowIndex][columnIndex] = 1
+        hiddenSafeCells -= 1
+        if (minefield[rowIndex][columnIndex] == 0) checkNeighbors(rowIndex, columnIndex)
     }
 
     /**
      * Ставит или снимает отметку мины на выбранной клетке.
      *
-     * @param num1 индекс строки.
-     * @param num2 индекс столбца.
+     * @param rowIndex индекс строки.
+     * @param columnIndex индекс столбца.
      * @return true, если отметка была изменена.
      */
-    private fun markMine(num1: Int, num2: Int): Boolean {
-        if (LINES[num1][num2] == 11) {
-            return if (VIEW[num1][num2] == 0) {
-                BOMBS -= 1
-                VIEW[num1][num2] = 2
-                true
-            } else {
-                BOMBS += 1
-                VIEW[num1][num2] = 0
+    private fun markMine(rowIndex: Int, columnIndex: Int): Boolean {
+        return if (minefield[rowIndex][columnIndex] == 11) {
+            toggleRealMineMark(rowIndex, columnIndex)
+        } else {
+            toggleEmptyCellMark(rowIndex, columnIndex)
+        }
+    }
+
+    /**
+     * Ставит или снимает отметку с настоящей мины.
+     *
+     * @param rowIndex индекс строки.
+     * @param columnIndex индекс столбца.
+     * @return true после изменения отметки.
+     */
+    private fun toggleRealMineMark(rowIndex: Int, columnIndex: Int): Boolean {
+        if (visibleCells[rowIndex][columnIndex] == 0) {
+            remainingMines -= 1
+            visibleCells[rowIndex][columnIndex] = 2
+        } else {
+            remainingMines += 1
+            visibleCells[rowIndex][columnIndex] = 0
+        }
+        return true
+    }
+
+    /**
+     * Ставит или снимает ошибочную отметку с безопасной клетки.
+     *
+     * @param rowIndex индекс строки.
+     * @param columnIndex индекс столбца.
+     * @return true при изменении отметки, false если открытая клетка не может быть отмечена.
+     */
+    private fun toggleEmptyCellMark(rowIndex: Int, columnIndex: Int): Boolean {
+        return when (visibleCells[rowIndex][columnIndex]) {
+            0 -> {
+                visibleCells[rowIndex][columnIndex] = 2
+                wrongMineMarks += 1
                 true
             }
-        } else {
-            return when (VIEW[num1][num2]) {
-                0 -> {
-                    VIEW[num1][num2] = 2
-                    FAKE_BOMBS += 1
-                    true
-                }
-                2 -> {
-                    VIEW[num1][num2] = 0
-                    FAKE_BOMBS -= 1
-                    true
-                }
-                else -> {
-                    println("open field cannot be marked")
-                    false
-                }
+            2 -> {
+                visibleCells[rowIndex][columnIndex] = 0
+                wrongMineMarks -= 1
+                true
+            }
+            else -> {
+                println("open field cannot be marked")
+                false
             }
         }
     }
@@ -204,16 +261,16 @@ object Minesweeper {
     /**
      * Размещает мины на поле после первого хода пользователя.
      */
-    private fun bombsSet() {
-        repeat(BOMBS) {
+    private fun placeMines() {
+        repeat(remainingMines) {
             var changed = false
             while (!changed) {
-                val num1 = (0..8).random()
-                val num2 = (0..8).random()
-                if (LINES[num1][num2] != 11 && VIEW[num1][num2] != 1) {
-                    LINES[num1][num2] = 11
+                val rowIndex = (0..8).random()
+                val columnIndex = (0..8).random()
+                if (minefield[rowIndex][columnIndex] != 11 && visibleCells[rowIndex][columnIndex] != 1) {
+                    minefield[rowIndex][columnIndex] = 11
                     changed = true
-                    surroundCheck(num1, num2)
+                    checkNeighbors(rowIndex, columnIndex)
                 }
             }
         }
@@ -222,37 +279,49 @@ object Minesweeper {
     /**
      * Проверяет соседние клетки вокруг указанной позиции.
      *
-     * @param num1 индекс строки.
-     * @param num2 индекс столбца.
+     * @param rowIndex индекс строки.
+     * @param columnIndex индекс столбца.
      */
-    private fun surroundCheck(num1: Int, num2: Int) {
-        if (num2 != 0 && LINES[num1][num2 - 1] != 11) surroundWork(num1, num2 - 1)
-        if (num2 != 8 && LINES[num1][num2 + 1] != 11) surroundWork(num1, num2 + 1)
-        if (num1 != 0) {
-            if (LINES[num1 - 1][num2] != 11) surroundWork(num1 - 1, num2)
-            if (num2 != 0 && LINES[num1 - 1][num2 - 1] != 11) surroundWork(num1 - 1, num2 - 1)
-            if (num2 != 8 && LINES[num1 - 1][num2 + 1] != 11) surroundWork(num1 - 1, num2 + 1)
-        }
-        if (num1 != 8) {
-            if (LINES[num1 + 1][num2] != 11) surroundWork(num1 + 1, num2)
-            if (num2 != 0 && LINES[num1 + 1][num2 - 1] != 11) surroundWork(num1 + 1, num2 - 1)
-            if (num2 != 8 && LINES[num1 + 1][num2 + 1] != 11) surroundWork(num1 + 1, num2 + 1)
+    private fun checkNeighbors(rowIndex: Int, columnIndex: Int) {
+        for (rowOffset in -1..1) {
+            for (columnOffset in -1..1) {
+                if (rowOffset == 0 && columnOffset == 0) continue
+                val neighborRow = rowIndex + rowOffset
+                val neighborColumn = columnIndex + columnOffset
+                if (isValidSafeCell(neighborRow, neighborColumn)) {
+                    updateNeighbor(neighborRow, neighborColumn)
+                }
+            }
         }
     }
 
     /**
+     * Проверяет, что соседняя клетка находится на поле и не содержит мину.
+     *
+     * @param rowIndex индекс строки.
+     * @param columnIndex индекс столбца.
+     * @return true для безопасной клетки внутри поля.
+     */
+    private fun isValidSafeCell(rowIndex: Int, columnIndex: Int): Boolean =
+        rowIndex in minefield.indices &&
+                columnIndex in minefield[rowIndex].indices &&
+                minefield[rowIndex][columnIndex] != 11
+
+    /**
      * Обрабатывает соседнюю клетку: считает мину рядом или раскрывает безопасную область.
      *
-     * @param num1 индекс строки.
-     * @param num2 индекс столбца.
+     * @param rowIndex индекс строки.
+     * @param columnIndex индекс столбца.
      */
-    private fun surroundWork(num1: Int, num2: Int) {
-        if (!SET_BOMBS && !FIRST) LINES[num1][num2] += 1 else {
-            if (VIEW[num1][num2] != 1) {
-                if (VIEW[num1][num2] == 2) FAKE_BOMBS -= 1
-                VIEW[num1][num2] = 1
-                if (!FIRST) FREE_LEFT -= 1
-                if (LINES[num1][num2] == 0 && !FIRST) surroundCheck(num1, num2)
+    private fun updateNeighbor(rowIndex: Int, columnIndex: Int) {
+        if (!minesPlaced && !isFirstNeighborPass) {
+            minefield[rowIndex][columnIndex] += 1
+        } else {
+            if (visibleCells[rowIndex][columnIndex] != 1) {
+                if (visibleCells[rowIndex][columnIndex] == 2) wrongMineMarks -= 1
+                visibleCells[rowIndex][columnIndex] = 1
+                if (!isFirstNeighborPass) hiddenSafeCells -= 1
+                if (minefield[rowIndex][columnIndex] == 0 && !isFirstNeighborPass) checkNeighbors(rowIndex, columnIndex)
             }
         }
     }
@@ -265,42 +334,42 @@ object Minesweeper {
      * @return введенное целое число.
      */
     private fun getNum(text: String, defaultMessage: Boolean = true): Int {
-        val strErrorNum = " was not a number, please try again: "
-        var num = text
-        var default = defaultMessage
+        val invalidNumberMessage = " was not a number, please try again: "
+        var userInput = text
+        var shouldShowError = defaultMessage
 
         do {
-            print(if (default) num + strErrorNum else num)
-            if (!default) default = true
-            num = readLine()!!
-        } while (!isNumber(num))
+            print(if (shouldShowError) userInput + invalidNumberMessage else userInput)
+            if (!shouldShowError) shouldShowError = true
+            userInput = readLine()!!
+        } while (!isNumber(userInput))
 
-        return num.toInt()
+        return userInput.toInt()
     }
 
     /**
      * Запрашивает число, пока оно не попадет в указанный диапазон.
      *
-     * @param num исходное значение.
+     * @param currentNumber исходное значение.
      * @param range допустимый диапазон.
      * @return число из допустимого диапазона.
      */
-    private fun getRange(num: Int, range: IntRange): Int {
-        var num2 = num
+    private fun getRange(currentNumber: Int, range: IntRange): Int {
+        var numberInRange = currentNumber
         do {
-            num2 = getNum("$num2 was out of range. Please enter a number ${range.first} to ${range.last}: ", false)
-        } while (notRange(num2, range))
-        return num2
+            numberInRange = getNum("$numberInRange was out of range. Please enter a number ${range.first} to ${range.last}: ", false)
+        } while (isOutOfRange(numberInRange, range))
+        return numberInRange
     }
 
     /**
      * Проверяет, находится ли число вне диапазона.
      *
-     * @param num проверяемое число.
+     * @param number проверяемое число.
      * @param range допустимый диапазон.
      * @return true, если число вне диапазона.
      */
-    private fun notRange(num: Int, range: IntRange) = (!range.contains(num))
+    fun isOutOfRange(number: Int, range: IntRange) = number !in range
 
     /**
      * Проверяет, можно ли преобразовать строку в целое число.

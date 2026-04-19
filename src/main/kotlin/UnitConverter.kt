@@ -1,233 +1,192 @@
 package converter
 
-import kotlin.system.exitProcess
-
 /**
  * Точка входа для запуска интерактивного конвертера единиц измерения.
  */
 fun main() {
-    UnitsConverter()
+    UnitsConverter().run()
 }
 
 /**
  * Консольный конвертер длины, веса и температуры.
  */
 class UnitsConverter {
-    /** Последняя разобранная команда пользователя. */
-    var input = arrayOf<String>()
-
     /**
-     * Запускает бесконечный цикл чтения команд до ввода exit.
+     * Запускает цикл чтения команд до ввода exit.
      */
-    init {
+    fun run() {
         while (true) {
             println("Enter what you want to convert (or exit): ")
-            input = readln().lowercase().replace("degrees ", "").replace("degree ", "").split(" ").toTypedArray()
-            if (input[0].equals("exit", true)) {
-                exitProcess(0)
-            }
-            if (input.size < 4 || input[0].toDoubleOrNull() == null) {
-                println("Parse error\n")
-                continue
-            }
-            converter()
-        }
-    }
-
-    /**
-     * Выполняет конвертацию последней введенной команды и печатает результат.
-     */
-    fun converter() {
-        val num = input[0].toDouble()
-        val inU = UNITS.values().find { input[1] in it.input }?.input
-        val outU = UNITS.values().find { input[3] in it.input }?.input
-        val inUnit = UNITS.values().mapNotNull { if (input[1] in it.input) input[1] else null }.joinToString("")
-        val outUnit = UNITS.values().mapNotNull { if (input[3] in it.input) input[3] else null }.joinToString("")
-        val inRates = UNITS.values().mapNotNull { if (input[1] in it.input) it.rates else null }
-        val outRates = UNITS.values().mapNotNull { if (input[3] in it.input) it.rates else null }
-
-        if (input[1] != inUnit && input[3] != outUnit) {
-            println("Conversion from ??? to ??? is impossible\n")
-            return
-        }
-        if (input[1] != inUnit) {
-            println("Conversion from ??? to ${outU?.get(2)} is impossible\n")
-            return
-        }
-        if (input[3] != outUnit) {
-            println("Conversion from ${inU?.get(2)} to ??? is impossible\n")
-            return
-        }
-
-        if (UNITS.values().find { input[1] in it.input }?.toUnit == UNITS.values()
-                .find { input[3] in it.input }?.toUnit
-        ) {
-            if (num < 0.0 && UNITS.values().find { input[1] in it.input }?.toUnit != "temp") {
-                println("${UNITS.values().find { input[1] in it.input }?.toUnit} shouldn't be negative")
+            val command = readln()
+            if (command.equals("exit", ignoreCase = true)) {
                 return
             }
-
-            if (UNITS.values().find { input[1] in it.input }?.toUnit != "temp" && UNITS.values()
-                    .find { input[3] in it.input }?.toUnit != "temp"
-            ) {
-                val conv = (num * inRates[0]) / outRates[0]
-                println(
-                    "$num ${if (num == 1.0) inU?.get(1) else inU?.get(2)} is $conv ${
-                        if (conv == 1.0) outU?.get(1) else outU?.get(
-                            2
-                        )
-                    }\n"
-                )
-            }
-
-            if (input[1] in UNITS.CELSIUS.input) {
-                if (input[3] in UNITS.KELVIN.input) {
-                    val cK = num + UNITS.KELVIN.rates
-                    println(
-                        "$num ${if (num == 1.0) inU?.get(1) else inU?.get(2)} is $cK ${
-                            if (cK == 1.0) outU?.get(1) else outU?.get(
-                                2
-                            )
-                        }\n"
-                    )
-
-                }
-                if (input[3] in UNITS.FAHRENHEIT.input) {
-                    val cF = (num * 9 / 5) + UNITS.CELSIUS.rates
-                    println(
-                        "$num ${if (num == 1.0) inU?.get(1) else inU?.get(2)} is $cF ${
-                            if (cF == 1.0) outU?.get(1) else outU?.get(
-                                2
-                            )
-                        }\n"
-                    )
-
-                }
-                if (input[3] in UNITS.CELSIUS.input) {
-                    println(
-                        "$num ${if (num == 1.0) inU?.get(1) else inU?.get(2)} is $num ${
-                            if (num == 1.0) outU?.get(1) else outU?.get(
-                                2
-                            )
-                        }\n"
-                    )
-                }
-            }
-            if (input[1] in UNITS.FAHRENHEIT.input) {
-                if (input[3] in UNITS.KELVIN.input) {
-                    val fK = (num + UNITS.FAHRENHEIT.rates) * 5 / 9
-                    println(
-                        "$num ${if (num == 1.0) inU?.get(1) else inU?.get(2)} is $fK ${
-                            if (fK == 1.0) outU?.get(1) else outU?.get(
-                                2
-                            )
-                        }\n"
-                    )
-
-                }
-                if (input[3] in UNITS.CELSIUS.input) {
-                    val fC = (num - UNITS.CELSIUS.rates) * 5 / 9
-                    println(
-                        "$num ${if (num == 1.0) inU?.get(1) else inU?.get(2)} is $fC ${
-                            if (fC == 1.0) outU?.get(1) else outU?.get(
-                                2
-                            )
-                        }\n"
-                    )
-
-                }
-                if (input[3] in UNITS.FAHRENHEIT.input) {
-                    println(
-                        "$num ${if (num == 1.0) inU?.get(1) else inU?.get(2)} is $num ${
-                            if (num == 1.0) outU?.get(1) else outU?.get(
-                                2
-                            )
-                        }\n"
-                    )
-                }
-            }
-            if (input[1] in UNITS.KELVIN.input) {
-                if (input[3] in UNITS.CELSIUS.input) {
-                    val kC = num - UNITS.KELVIN.rates
-                    println(
-                        "$num ${if (num == 1.0) inU?.get(1) else inU?.get(2)} is $kC ${
-                            if (kC == 1.0) outU?.get(1) else outU?.get(
-                                2
-                            )
-                        }\n"
-                    )
-
-                }
-                if (input[3] in UNITS.FAHRENHEIT.input) {
-                    val kF = (num * 9 / 5) - UNITS.FAHRENHEIT.rates
-                    println(
-                        "$num ${if (num == 1.0) inU?.get(1) else inU?.get(2)} is $kF ${
-                            if (kF == 1.0) outU?.get(1) else outU?.get(
-                                2
-                            )
-                        }\n"
-                    )
-
-                }
-                if (input[3] in UNITS.KELVIN.input) {
-                    println(
-                        "$num ${if (num == 1.0) inU?.get(1) else inU?.get(2)} is $num ${
-                            if (num == 1.0) outU?.get(1) else outU?.get(
-                                2
-                            )
-                        }\n"
-                    )
-                }
-
-            }
-        } else {
-            println("Conversion from ${inU?.get(2)} to ${outU?.get(2)} is impossible\n")
+            println(convert(command))
         }
-
     }
 
     /**
-     * Справочник поддерживаемых единиц измерения.
+     * Конвертирует одну команду пользователя в текст результата.
      *
-     * @property rates коэффициент пересчета для длины и веса или температурная константа.
-     * @property input допустимые варианты ввода единицы.
-     * @property toUnit тип величины: length, weight или temp.
+     * @param command строка вида "15 meters to feet".
+     * @return текст результата или сообщение об ошибке.
      */
-    enum class UNITS(val rates: Double, val input: Array<String>, val toUnit: String) {
-        /** Метр. */
-        METER(1.0, arrayOf("m", "meter", "meters"), "length"),
-        /** Километр. */
-        KILOMETER(1000.0, arrayOf("km", "kilometer", "kilometers"), "length"),
-        /** Сантиметр. */
-        CENTIMETER(0.01, arrayOf("cm", "centimeter", "centimeters"), "length"),
-        /** Миллиметр. */
-        MILLIMETER(0.001, arrayOf("mm", "millimeter", "millimeters"), "length"),
-        /** Миля. */
-        MILES(1609.35, arrayOf("mi", "mile", "miles"), "length"),
-        /** Ярд. */
-        YARDS(0.9144, arrayOf("yd", "yard", "yards"), "length"),
-        /** Фут. */
-        FEET(0.3048, arrayOf("ft", "foot", "feet"), "length"),
-        /** Дюйм. */
-        INCHES(0.0254, arrayOf("in", "inch", "inches"), "length"),
+    fun convert(command: String): String = convertMeasurement(command)
+}
 
-        /** Грамм. */
-        GRAMS(1.0, arrayOf("g", "gram", "grams"), "weight"),
-        /** Килограмм. */
-        KILOGRAMS(1000.0, arrayOf("kg", "kilogram", "kilograms"), "weight"),
-        /** Миллиграмм. */
-        MILLIGRAMS(0.001, arrayOf("mg", "milligram", "milligrams"), "weight"),
-        /** Фунт. */
-        POUNDS(453.592, arrayOf("lb", "pound", "pounds"), "weight"),
-        /** Унция. */
-        OUNCES(28.3495, arrayOf("oz", "ounce", "ounces"), "weight"),
+/**
+ * Конвертирует одну команду пользователя в текст результата.
+ *
+ * @param command строка вида "15 meters to feet".
+ * @return текст результата или сообщение об ошибке.
+ */
+fun convertMeasurement(command: String): String {
+    val commandParts = command.lowercase()
+        .replace("degrees ", "")
+        .replace("degree ", "")
+        .split(" ")
 
-        /** Градус Цельсия. */
-        CELSIUS(32.0, arrayOf("c", "degree Celsius", "degrees Celsius", "celsius", "dc"), "temp"),
-        /** Градус Фаренгейта. */
-        FAHRENHEIT(459.67, arrayOf("f", "degree Fahrenheit", "degrees Fahrenheit", "fahrenheit", "df"), "temp"),
-        /** Кельвин. */
-        KELVIN(273.15, arrayOf("k", "kelvin", "kelvins"), "temp")
-
+    if (commandParts.size < 4 || commandParts[0].toDoubleOrNull() == null) {
+        return "Parse error"
     }
+
+    val sourceValue = commandParts[0].toDouble()
+    val sourceUnit = MeasurementUnit.entries.find { commandParts[1] in it.aliases }
+    val targetUnit = MeasurementUnit.entries.find { commandParts[3] in it.aliases }
+
+    if (sourceUnit == null && targetUnit == null) {
+        return "Conversion from ??? to ??? is impossible"
+    }
+    if (sourceUnit == null) {
+        return "Conversion from ??? to ${targetUnit!!.pluralName} is impossible"
+    }
+    if (targetUnit == null) {
+        return "Conversion from ${sourceUnit.pluralName} to ??? is impossible"
+    }
+    if (sourceUnit.measurementType != targetUnit.measurementType) {
+        return "Conversion from ${sourceUnit.pluralName} to ${targetUnit.pluralName} is impossible"
+    }
+    if (sourceValue < 0.0 && sourceUnit.measurementType != MeasurementType.TEMPERATURE) {
+        return "${sourceUnit.measurementType.displayName} shouldn't be negative"
+    }
+
+    val convertedValue = when (sourceUnit.measurementType) {
+        MeasurementType.LENGTH,
+        MeasurementType.WEIGHT -> sourceValue * sourceUnit.baseRate / targetUnit.baseRate
+        MeasurementType.TEMPERATURE -> convertTemperature(sourceValue, sourceUnit, targetUnit)
+    }
+    return "$sourceValue ${sourceUnit.nameFor(sourceValue)} is $convertedValue ${targetUnit.nameFor(convertedValue)}"
+}
+
+/**
+ * Конвертирует температуру между шкалами Цельсия, Фаренгейта и Кельвина.
+ *
+ * @param sourceValue исходное значение температуры.
+ * @param sourceUnit исходная единица температуры.
+ * @param targetUnit целевая единица температуры.
+ * @return сконвертированное значение.
+ */
+fun convertTemperature(sourceValue: Double, sourceUnit: MeasurementUnit, targetUnit: MeasurementUnit): Double {
+    val celsiusValue = when (sourceUnit) {
+        MeasurementUnit.CELSIUS -> sourceValue
+        MeasurementUnit.FAHRENHEIT -> (sourceValue - 32.0) * 5 / 9
+        MeasurementUnit.KELVIN -> sourceValue - 273.15
+        else -> error("${sourceUnit.singularName} is not a temperature unit")
+    }
+
+    return when (targetUnit) {
+        MeasurementUnit.CELSIUS -> celsiusValue
+        MeasurementUnit.FAHRENHEIT -> celsiusValue * 9 / 5 + 32.0
+        MeasurementUnit.KELVIN -> celsiusValue + 273.15
+        else -> error("${targetUnit.singularName} is not a temperature unit")
+    }
+}
+
+/**
+ * Тип измеряемой величины.
+ *
+ * @property displayName название типа для сообщений об ошибках.
+ */
+enum class MeasurementType(val displayName: String) {
+    /** Длина. */
+    LENGTH("Length"),
+
+    /** Вес. */
+    WEIGHT("Weight"),
+
+    /** Температура. */
+    TEMPERATURE("Temperature")
+}
+
+/**
+ * Справочник поддерживаемых единиц измерения.
+ *
+ * @property baseRate коэффициент пересчета к базовой единице для длины и веса.
+ * @property aliases допустимые варианты ввода единицы.
+ * @property measurementType тип измеряемой величины.
+ * @property singularName название единицы в единственном числе.
+ * @property pluralName название единицы во множественном числе.
+ */
+enum class MeasurementUnit(
+    val baseRate: Double,
+    val aliases: Set<String>,
+    val measurementType: MeasurementType,
+    val singularName: String,
+    val pluralName: String,
+) {
+    /** Метр. */
+    METER(1.0, setOf("m", "meter", "meters"), MeasurementType.LENGTH, "meter", "meters"),
+
+    /** Километр. */
+    KILOMETER(1000.0, setOf("km", "kilometer", "kilometers"), MeasurementType.LENGTH, "kilometer", "kilometers"),
+
+    /** Сантиметр. */
+    CENTIMETER(0.01, setOf("cm", "centimeter", "centimeters"), MeasurementType.LENGTH, "centimeter", "centimeters"),
+
+    /** Миллиметр. */
+    MILLIMETER(0.001, setOf("mm", "millimeter", "millimeters"), MeasurementType.LENGTH, "millimeter", "millimeters"),
+
+    /** Миля. */
+    MILE(1609.35, setOf("mi", "mile", "miles"), MeasurementType.LENGTH, "mile", "miles"),
+
+    /** Ярд. */
+    YARD(0.9144, setOf("yd", "yard", "yards"), MeasurementType.LENGTH, "yard", "yards"),
+
+    /** Фут. */
+    FOOT(0.3048, setOf("ft", "foot", "feet"), MeasurementType.LENGTH, "foot", "feet"),
+
+    /** Дюйм. */
+    INCH(0.0254, setOf("in", "inch", "inches"), MeasurementType.LENGTH, "inch", "inches"),
+
+    /** Грамм. */
+    GRAM(1.0, setOf("g", "gram", "grams"), MeasurementType.WEIGHT, "gram", "grams"),
+
+    /** Килограмм. */
+    KILOGRAM(1000.0, setOf("kg", "kilogram", "kilograms"), MeasurementType.WEIGHT, "kilogram", "kilograms"),
+
+    /** Миллиграмм. */
+    MILLIGRAM(0.001, setOf("mg", "milligram", "milligrams"), MeasurementType.WEIGHT, "milligram", "milligrams"),
+
+    /** Фунт. */
+    POUND(453.592, setOf("lb", "pound", "pounds"), MeasurementType.WEIGHT, "pound", "pounds"),
+
+    /** Унция. */
+    OUNCE(28.3495, setOf("oz", "ounce", "ounces"), MeasurementType.WEIGHT, "ounce", "ounces"),
+
+    /** Градус Цельсия. */
+    CELSIUS(1.0, setOf("c", "celsius", "dc"), MeasurementType.TEMPERATURE, "degree Celsius", "degrees Celsius"),
+
+    /** Градус Фаренгейта. */
+    FAHRENHEIT(1.0, setOf("f", "fahrenheit", "df"), MeasurementType.TEMPERATURE, "degree Fahrenheit", "degrees Fahrenheit"),
+
+    /** Кельвин. */
+    KELVIN(1.0, setOf("k", "kelvin", "kelvins"), MeasurementType.TEMPERATURE, "kelvin", "kelvins");
+
+    /**
+     * Выбирает форму названия единицы по значению.
+     *
+     * @param value числовое значение.
+     * @return название в единственном или множественном числе.
+     */
+    fun nameFor(value: Double): String = if (value == 1.0) singularName else pluralName
 }

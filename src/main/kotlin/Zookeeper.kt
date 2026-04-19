@@ -1,7 +1,7 @@
 package zookeeper
 
 /** Изображение верблюда для камеры зоопарка. */
-const val camel = """Switching on the camera in the camel habitat...
+const val CAMEL_CAMERA = """Switching on the camera in the camel habitat...
  ___.-''''-.
 /___  @    |
 ',,,,.     |         _.'''''''._
@@ -22,7 +22,7 @@ const val camel = """Switching on the camera in the camel habitat...
 Look at that! Our little camel is sunbathing!"""
 
 /** Изображение льва для камеры зоопарка. */
-const val lion = """Switching on the camera in the lion habitat...
+const val LION_CAMERA = """Switching on the camera in the lion habitat...
                                                ,w.
                                              ,YWMMw  ,M  ,
                         _.---.._   __..---._.'MMMMMw,wMWmW,
@@ -40,7 +40,7 @@ WMMm__,-'.'     /      _.\      F'''-+,,   ;_,_.dMMMMMMMM[,_ / `=_}
 The lion is roaring!"""
 
 /** Изображение оленя для камеры зоопарка. */
-const val deer = """Switching on the camera in the deer habitat...
+const val DEER_CAMERA = """Switching on the camera in the deer habitat...
    /|       |\
 `__\\       //__'
    ||      ||
@@ -68,7 +68,7 @@ const val deer = """Switching on the camera in the deer habitat...
 Our 'Bambi' looks hungry. Let's go to feed it!"""
 
 /** Изображение гуся для камеры зоопарка. */
-const val goose = """Switching on the camera in the goose habitat...
+const val GOOSE_CAMERA = """Switching on the camera in the goose habitat...
 
                                     _
                                 ,-"" "".
@@ -84,7 +84,7 @@ const val goose = """Switching on the camera in the goose habitat...
 The goose is staring intently at you... Maybe it's time to change the channel?"""
 
 /** Изображение летучей мыши для камеры зоопарка. */
-const val bat = """Switching on the camera in the bat habitat...
+const val BAT_CAMERA = """Switching on the camera in the bat habitat...
 _________________               _________________
  ~-.              \  |\___/|  /              .-~
      ~-.           \ / o o \ /           .-~
@@ -99,7 +99,7 @@ _________________               _________________
 This bat looks like it's doing fine."""
 
 /** Изображение кролика для камеры зоопарка. */
-const val rabbit = """Switching on the camera in the rabbit habitat...
+const val RABBIT_CAMERA = """Switching on the camera in the rabbit habitat...
          ,
         /|      __
        / |   ,-~ /
@@ -122,7 +122,7 @@ const val rabbit = """Switching on the camera in the rabbit habitat...
 It looks like we will soon have more rabbits!"""
 
 /** Список изображений животных, доступных по номеру habitat. */
-val animals = arrayOf(camel, lion, deer, goose, bat, rabbit)
+val animalCameras = arrayOf(CAMEL_CAMERA, LION_CAMERA, DEER_CAMERA, GOOSE_CAMERA, BAT_CAMERA, RABBIT_CAMERA)
 
 /**
  * Запускает просмотр камер зоопарка и обрабатывает команды пользователя.
@@ -130,16 +130,26 @@ val animals = arrayOf(camel, lion, deer, goose, bat, rabbit)
 fun main() {
     while (true) {
         println("Please enter the number of the habitat you would like to view")
-        val string = readln()
-        if (string.equals("exit", ignoreCase = true)) {
+        val command = readln()
+        if (command.equals("exit", ignoreCase = true)) {
             println("See you later!")
             return
         }
-        val habitat = string.toIntOrNull()
-        if (habitat in animals.indices) {
-            println(animals[habitat!!])
+        val habitatNumber = command.toIntOrNull()
+        val cameraText = findAnimalCamera(habitatNumber)
+        if (cameraText != null) {
+            println(cameraText)
         } else {
             println("Wrong choice, please enter 0..5 or exit")
         }
     }
 }
+
+/**
+ * Возвращает изображение камеры по номеру habitat.
+ *
+ * @param habitatNumber номер habitat из пользовательского ввода.
+ * @return изображение животного или null для неверного номера.
+ */
+fun findAnimalCamera(habitatNumber: Int?): String? =
+    habitatNumber?.takeIf { it in animalCameras.indices }?.let { animalCameras[it] }

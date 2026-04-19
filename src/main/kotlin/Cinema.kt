@@ -1,29 +1,30 @@
 package cinema
 
+import java.util.Locale
+
 /**
  * Запускает интерактивную систему бронирования мест в кинотеатре.
  */
 fun main() {
-    val rows = getNum("Enter the number of rows:")
-    val seats = getNum("Enter the number of seats in each row:")
+    val rowCount = getNum("Enter the number of rows:")
+    val seatsPerRow = getNum("Enter the number of seats in each row:")
 
-    if (rows < 1 || seats < 1) {
+    if (rowCount < 1 || seatsPerRow < 1) {
         println("please enter positive numbers greater than zero for rows and seats.")
         main()
     } else {
-        val theater = Array(rows) { Array(seats) { 'S' } }
-        val totalSeats = rows * seats
-        val totalIncome = if (totalSeats > 60) rows / 2 * 10 * seats +
-                (rows / 2 + rows % 2) * 8 * seats else totalSeats * 10
+        val cinemaHall = Array(rowCount) { Array(seatsPerRow) { 'S' } }
+        val totalSeats = rowCount * seatsPerRow
+        val totalIncome = calculateTotalIncome(rowCount, seatsPerRow)
         var soldSeats = 0
         var currentIncome = 0
         var command = getNum(printMenu())
 
         while (command != 0) {
             when (command) {
-                1 -> printSeats(theater)
+                1 -> printSeats(cinemaHall)
                 2 -> {
-                    currentIncome += bookSeat(theater, totalSeats)
+                    currentIncome += bookSeat(cinemaHall, totalSeats)
                     soldSeats++
                 }
 
@@ -42,16 +43,16 @@ fun main() {
  * @return введенное пользователем целое число.
  */
 fun getNum(text: String, defaultMessage: Boolean = false): Int {
-    val strErrorNum = " was not a number, please try again: "
-    var num = text
-    var default = defaultMessage
+    val invalidNumberMessage = " was not a number, please try again: "
+    var userInput = text
+    var shouldShowError = defaultMessage
 
     do {
-        num = getString(if (default) num + strErrorNum else num)
-        if (!default) default = true
-    } while (!isNumber(num))
+        userInput = getString(if (shouldShowError) userInput + invalidNumberMessage else userInput)
+        if (!shouldShowError) shouldShowError = true
+    } while (!isNumber(userInput))
 
-    return num.toInt()
+    return userInput.toInt()
 }
 
 /**
@@ -71,14 +72,14 @@ fun printMenu(): String {
  *
  * @param theater матрица мест кинотеатра.
  */
-fun printSeats(theater: Array<Array<Char>>) {
+fun printSeats(cinemaHall: Array<Array<Char>>) {
     print("\nCinema:\n ")
-    for (num in theater[0].indices) print(" ${num + 1}")
+    for (seatIndex in cinemaHall[0].indices) print(" ${seatIndex + 1}")
     println()
 
-    for (rowNum in theater.indices) {
-        print(rowNum + 1)
-        for (seat in theater[rowNum]) print(" $seat")
+    for (rowIndex in cinemaHall.indices) {
+        print(rowIndex + 1)
+        for (seatState in cinemaHall[rowIndex]) print(" $seatState")
         println()
     }
 }
@@ -90,24 +91,68 @@ fun printSeats(theater: Array<Array<Char>>) {
  * @param totalSeats общее количество мест в зале.
  * @return цена успешно купленного билета.
  */
-fun bookSeat(theater: Array<Array<Char>>, totalSeats: Int): Int {
+fun bookSeat(cinemaHall: Array<Array<Char>>, totalSeats: Int): Int {
     return try {
         val row = getNum("\nEnter a row number:")
         val seat = getNum("Enter a seat number in that row:")
-        val price = if (totalSeats > 60 && row > theater.size / 2) 8 else 10
+        val price = calculateTicketPrice(row, cinemaHall.size, totalSeats)
 
-        if (theater[row - 1][seat - 1] == 'B') {
+        if (cinemaHall[row - 1][seat - 1] == 'B') {
             println("\nThat ticket has already been purchased!")
-            bookSeat(theater, totalSeats)
+            bookSeat(cinemaHall, totalSeats)
         } else {
-            theater[row - 1][seat - 1] = 'B'
+            cinemaHall[row - 1][seat - 1] = 'B'
             println("\nTicket price: $$price")
             price
         }
     } catch (e: IndexOutOfBoundsException) {
         println("\nWrong input!")
-        bookSeat(theater, totalSeats)
+        bookSeat(cinemaHall, totalSeats)
     }
+}
+
+/**
+ * Рассчитывает цену билета для указанного ряда.
+ *
+ * @param rowNumber номер ряда с единицы.
+ * @param rowCount количество рядов в зале.
+ * @param totalSeats общее количество мест.
+ * @return стоимость билета.
+ */
+fun calculateTicketPrice(rowNumber: Int, rowCount: Int, totalSeats: Int): Int =
+    if (totalSeats > 60 && rowNumber > rowCount / 2) 8 else 10
+
+/**
+ * Рассчитывает максимально возможную выручку зала.
+ *
+ * @param rowCount количество рядов.
+ * @param seatsPerRow количество мест в каждом ряду.
+ * @return максимальная выручка при продаже всех билетов.
+ */
+fun calculateTotalIncome(rowCount: Int, seatsPerRow: Int): Int {
+    val totalSeats = rowCount * seatsPerRow
+    return if (totalSeats > 60) {
+        rowCount / 2 * 10 * seatsPerRow + (rowCount / 2 + rowCount % 2) * 8 * seatsPerRow
+    } else {
+        totalSeats * 10
+    }
+}
+
+/**
+ * Формирует текст статистики продаж.
+ *
+ * @param totalSeats общее количество мест.
+ * @param totalIncome максимально возможная выручка.
+ * @param soldSeats количество проданных мест.
+ * @param currentIncome текущая выручка.
+ * @return готовая строка статистики.
+ */
+fun buildStatisticsText(totalSeats: Int, totalIncome: Int, soldSeats: Int, currentIncome: Int): String {
+    val soldSeatsPercentage = String.format(Locale.US, "%.2f", soldSeats.toDouble() / totalSeats * 100)
+    return "\nNumber of purchased tickets: $soldSeats\n" +
+            "Percentage: $soldSeatsPercentage%\n" +
+            "Current income: $$currentIncome\n" +
+            "Total income: $$totalIncome"
 }
 
 /**
@@ -119,13 +164,7 @@ fun bookSeat(theater: Array<Array<Char>>, totalSeats: Int): Int {
  * @param currentIncome текущая выручка.
  */
 fun statistics(totalSeats: Int, totalIncome: Int, soldSeats: Int, currentIncome: Int) {
-    val percent = "%.2f".format(soldSeats.toDouble() / totalSeats * 100)
-    val statString = "\nNumber of purchased tickets: $soldSeats\n" +
-            "Percentage: $percent%\n" +
-            "Current income: $$currentIncome\n" +
-            "Total income: $$totalIncome"
-
-    println(statString)
+    println(buildStatisticsText(totalSeats, totalIncome, soldSeats, currentIncome))
 }
 
 /**

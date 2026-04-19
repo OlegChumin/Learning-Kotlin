@@ -4,7 +4,7 @@ import java.util.Scanner
 
 
 /** Сканер для чтения пользовательского ввода в программе Simple Bot. */
-val scanner = Scanner(System.`in`) // Do not change this line
+val inputScanner = Scanner(System.`in`) // Do not change this line
 
 /**
  * Запускает учебного чат-бота и последовательно выполняет все этапы диалога.
@@ -34,8 +34,8 @@ fun greet(assistantName: String, birthYear: String) {
  * Читает имя пользователя и выводит ответное сообщение.
  */
 fun remindName() {
-    val name = scanner.nextLine()
-    println("What a great name you have, ${name}!")
+    val userName = inputScanner.nextLine()
+    println(buildNameReminder(userName))
 }
 
 /**
@@ -44,11 +44,11 @@ fun remindName() {
 fun guessAge() {
     println("Let me guess your age.")
     println("Enter remainders of dividing your age by 3, 5 and 7.")
-    val rem3 = scanner.nextInt()
-    val rem5 = scanner.nextInt()
-    val rem7 = scanner.nextInt()
-    val age = (rem3 * 70 + rem5 * 21 + rem7 * 15) % 105
-    println("Your age is ${age}; that's a good time to start programming!")
+    val remainderByThree = inputScanner.nextInt()
+    val remainderByFive = inputScanner.nextInt()
+    val remainderBySeven = inputScanner.nextInt()
+    val age = calculateAge(remainderByThree, remainderByFive, remainderBySeven)
+    println("Your age is $age; that's a good time to start programming!")
 }
 
 /**
@@ -56,9 +56,9 @@ fun guessAge() {
  */
 fun count() {
     println("Now I will prove to you that I can count to any number you want.")
-    val num = scanner.nextInt()
-    for (i in 0..num) {
-        print(i)
+    val maxNumber = inputScanner.nextInt()
+    for (number in 0..maxNumber) {
+        print(number)
         println("!")
     }
 }
@@ -75,10 +75,10 @@ fun test() {
         3. To determine the execution time of a program.
         4. To interrupt the execution of a program.
     """)
-    var answer = scanner.nextInt()
+    var answer = inputScanner.nextInt()
     while (answer != 2) {
         println("Please, try again.")
-        answer = scanner.nextInt()
+        answer = inputScanner.nextInt()
     }
 }
 
@@ -88,3 +88,22 @@ fun test() {
 fun end() {
     println("Congratulations, have a nice day!") // Do not change this text
 }
+
+/**
+ * Формирует ответ бота после получения имени пользователя.
+ *
+ * @param userName имя пользователя.
+ * @return текст ответа.
+ */
+fun buildNameReminder(userName: String): String = "What a great name you have, $userName!"
+
+/**
+ * Рассчитывает возраст по остаткам от деления на 3, 5 и 7.
+ *
+ * @param remainderByThree остаток от деления возраста на 3.
+ * @param remainderByFive остаток от деления возраста на 5.
+ * @param remainderBySeven остаток от деления возраста на 7.
+ * @return рассчитанный возраст.
+ */
+fun calculateAge(remainderByThree: Int, remainderByFive: Int, remainderBySeven: Int): Int =
+    (remainderByThree * 70 + remainderByFive * 21 + remainderBySeven * 15) % 105

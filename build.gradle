@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
 def kotlinMainClass(String className) {
@@ -21,7 +22,7 @@ tasks.register('runHello', JavaExec) {
     group = 'application'
     description = 'Запускает демонстрационный Hello Kotlin.'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = kotlinMainClass('org.example.MainKt')
+    mainClass = kotlinMainClass('org.example.MainSampleKt')
     standardInput = System.in
 }
 
