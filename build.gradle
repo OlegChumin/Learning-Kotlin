@@ -11,6 +11,59 @@ repositories {
 
 dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+def kotlinMainClass(String className) {
+    return className
+}
+
+tasks.register('runHello', JavaExec) {
+    group = 'application'
+    description = 'Запускает демонстрационный Hello Kotlin.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = kotlinMainClass('org.example.MainSampleKt')
+    standardInput = System.in
+}
+
+tasks.register('runCinema', JavaExec) {
+    group = 'application'
+    description = 'Запускает систему бронирования мест в кинотеатре.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = kotlinMainClass('cinema.CinemaKt')
+    standardInput = System.in
+}
+
+tasks.register('runMinesweeper', JavaExec) {
+    group = 'application'
+    description = 'Запускает игру Сапер.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = kotlinMainClass('minesweeper.MinesweeperKt')
+    standardInput = System.in
+}
+
+tasks.register('runSimpleBot', JavaExec) {
+    group = 'application'
+    description = 'Запускает учебного чат-бота.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = kotlinMainClass('bot.SimpleBotKt')
+    standardInput = System.in
+}
+
+tasks.register('runUnitConverter', JavaExec) {
+    group = 'application'
+    description = 'Запускает конвертер единиц измерения.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = kotlinMainClass('converter.UnitConverterKt')
+    standardInput = System.in
+}
+
+tasks.register('runZookeeper', JavaExec) {
+    group = 'application'
+    description = 'Запускает просмотр камер зоопарка.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = kotlinMainClass('zookeeper.ZookeeperKt')
+    standardInput = System.in
 }
 
 kotlin {
